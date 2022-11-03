@@ -1,22 +1,13 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
-const { updateEntity } = require("../services/tableService");
-
-type entity = {
-  _: string;
-};
-
-interface Object {
-  PartitionKey: entity;
-  RowKey: entity;
-  title?: entity;
-  content?: entity;
-}
+import { AppDataSource } from "../services/dbConnection";
+import { Post } from "../entities/Post.entity";
 
 const httpTrigger: AzureFunction = async function (
   context: Context,
   req: HttpRequest
 ): Promise<void> {
   try {
+    await AppDataSource.initialize();
     if (!req.body) {
       context.res = {
         status: 400,
@@ -32,17 +23,16 @@ const httpTrigger: AzureFunction = async function (
       };
       return;
     }
-    const { blog, id } = context.bindingData;
+    const { id } = context.bindingData;
 
-    const entity: Object = {
-      PartitionKey: { _: blog },
-      RowKey: { _: id.toString() },
-    };
+    const res = await Post.findOneBy({ id });
 
-    if (title) entity.title = { _: title };
-    if (content) entity.content = { _: content };
+    if (title) res.title = title;
+    if (content) res.content = content;
 
-    await updateEntity("Posts", entity);
+    await res.save();
+    await AppDataSource.destroy();
+
     context.res = {
       status: 200,
       body: "Successfully updated",

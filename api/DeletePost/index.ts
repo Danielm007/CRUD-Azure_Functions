@@ -1,4 +1,6 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
+import { Post } from "../entities/Post.entity";
+import { AppDataSource } from "../services/dbConnection";
 const { deleteEntity } = require("../services/tableService");
 
 const httpTrigger: AzureFunction = async function (
@@ -6,13 +8,19 @@ const httpTrigger: AzureFunction = async function (
   req: HttpRequest
 ): Promise<void> {
   try {
-    const { blog, id } = context.bindingData;
-    const entity = {
-      PartitionKey: { _: blog },
-      RowKey: { _: id.toString() },
-    };
+    await AppDataSource.initialize();
+    const { id } = context.bindingData;
+    const res = await Post.findOneBy({ id });
+    if (!res) {
+      context.res = {
+        status: 404,
+        body: "Post doesn't exists",
+      };
+      return;
+    }
 
-    await deleteEntity("Posts", entity);
+    await res.remove();
+    await AppDataSource.destroy();
 
     context.res = {
       status: 200,

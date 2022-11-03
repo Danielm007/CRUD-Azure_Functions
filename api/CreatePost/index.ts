@@ -1,4 +1,6 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
+import { Post } from "../entities/Post.entity";
+import { AppDataSource } from "../services/dbConnection";
 const { insertEntity } = require("../services/tableService");
 
 const httpTrigger: AzureFunction = async function (
@@ -6,6 +8,8 @@ const httpTrigger: AzureFunction = async function (
   req: HttpRequest
 ): Promise<void> {
   try {
+    await AppDataSource.initialize();
+    console.log("Database connected");
     if (!req.body) {
       context.res = {
         status: 400 /* Defaults to 200 */,
@@ -13,8 +17,8 @@ const httpTrigger: AzureFunction = async function (
       };
       return;
     }
-    const { blog, title, content } = req.body;
-    if (!blog || !title || !content) {
+    const { title, content } = req.body;
+    if (!title || !content) {
       context.res = {
         status: 400 /* Defaults to 200 */,
         body: "Please pass blog, title and content",
@@ -22,8 +26,14 @@ const httpTrigger: AzureFunction = async function (
       return;
     }
 
+    const post = new Post();
+    post.title = title;
+    post.content = content;
+    const res = await post.save();
+    console.log(res);
+    await AppDataSource.destroy();
     const entity = {
-      PartitionKey: { _: blog },
+      PartitionKey: { _: "Daniel Dev" },
       RowKey: { _: new Date().getTime().toString() },
       title: { _: title },
       content: { _: content },

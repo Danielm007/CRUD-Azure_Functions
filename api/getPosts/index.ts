@@ -1,18 +1,24 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
-const { queryEntities } = require("../services/tableService");
-const azure = require("azure-storage");
+// import { createConnection } from "typeorm";
+import { Post } from "../entities/Post.entity";
+import { AppDataSource } from "../services/dbConnection";
+// const { queryEntities } = require("../services/tableService");
+// const azure = require("azure-storage");
 
 const httpTrigger: AzureFunction = async function (
   context: Context,
   req: HttpRequest
 ): Promise<void> {
   try {
-    const blog = context.bindingData.blog;
-    const query = new azure.TableQuery().where("PartitionKey eq ?", blog);
-    const result = await queryEntities("Posts", query);
+    await AppDataSource.initialize();
+    console.log("Database connected");
+    // Get all results for posts
+    const results = await Post.find();
+    console.log(results);
+    await AppDataSource.destroy();
     context.res = {
       // status: 200, /* Defaults to 200 */
-      body: result,
+      body: results,
     };
   } catch (error) {
     context.res = {

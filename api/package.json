@@ -9,7 +9,12 @@
     "start": "func start",
     "test": "echo \"No tests yet...\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "azure-storage": "^2.10.7",
+    "mssql": "^7.3.5",
+    "reflect-metadata": "^0.1.13",
+    "typeorm": "^0.3.10"
+  },
   "devDependencies": {
     "@azure/functions": "^3.0.0",
     "@types/node": "16.x",
